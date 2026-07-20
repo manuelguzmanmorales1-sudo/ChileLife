@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/server.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["index.html", "portal.html", "css/**", "js/**", "img/**"]
+      }
+    }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "backend/server.js" }
+  ],
+  "crons": [
+    { "path": "/api/cron/sueldos", "schedule": "0 12 * * *" }
+  ]
+}
