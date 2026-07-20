@@ -9,6 +9,11 @@ const { connectDB, disconnectDB } = require('./config/db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Vercel (y la mayoría de hosts serverless) ponen la app detrás de un proxy;
+// esto le dice a Express que confíe en el header X-Forwarded-For para saber
+// la IP real del visitante (lo necesita express-rate-limit para funcionar bien).
+app.set('trust proxy', 1);
+
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
