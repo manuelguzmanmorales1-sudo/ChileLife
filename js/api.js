@@ -241,6 +241,51 @@ const API = {
     return this.fetch('/sueldos');
   },
 
+  // ===== Roles y permisos (Gestión de Roles) =====
+  async getModulosDisponibles() {
+    return this.fetch('/roles/modulos-disponibles');
+  },
+  async getRoles(params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.fetch(`/roles${q ? '?' + q : ''}`);
+  },
+  async sincronizarRolesDiscord() {
+    return this.fetch('/roles/sync', { method: 'POST' });
+  },
+  async refrescarConteoRoles() {
+    return this.fetch('/roles/refrescar-conteo', { method: 'POST' });
+  },
+  async crearRolPermiso(data) {
+    return this.fetch('/roles', { method: 'POST', body: JSON.stringify(data) });
+  },
+  async actualizarRolPermiso(id, data) {
+    return this.fetch(`/roles/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+  async eliminarRolPermiso(id) {
+    return this.fetch(`/roles/${id}`, { method: 'DELETE' });
+  },
+
+  // ===== Economía (Gestión de Economía) =====
+  async getEconomias(params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.fetch(`/economia${q ? '?' + q : ''}`);
+  },
+  async getRolesDiscordDisponibles() {
+    return this.fetch('/economia/discord-roles');
+  },
+  async crearEconomia(data) {
+    return this.fetch('/economia', { method: 'POST', body: JSON.stringify(data) });
+  },
+  async actualizarEconomia(id, data) {
+    return this.fetch(`/economia/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+  async verificarEconomia(id) {
+    return this.fetch(`/economia/${id}/verificar`, { method: 'POST' });
+  },
+  async eliminarEconomia(id) {
+    return this.fetch(`/economia/${id}`, { method: 'DELETE' });
+  },
+
   // ===== Panel de Staff =====
   async getCedulas(search = '') {
     return this.fetch(`/staff/cedulas${search ? '?search=' + encodeURIComponent(search) : ''}`);
