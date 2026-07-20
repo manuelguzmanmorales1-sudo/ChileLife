@@ -10,7 +10,7 @@ const App = {
     document.getElementById('page-content').innerHTML = `
       <div style="text-align:center;padding:120px 20px;">
         <i class="fas fa-shield-alt fa-spin" style="font-size:64px;background:linear-gradient(135deg,var(--accent),var(--info));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i>
-        <p style="margin-top:24px;font-size:18px;font-weight:700;background:linear-gradient(135deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Chile Metropolitano</p>
+        <p style="margin-top:24px;font-size:18px;font-weight:700;background:linear-gradient(135deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Chile Life</p>
         <p style="margin-top:8px;color:var(--text-muted);font-size:14px;">Conectando con el servidor...</p>
         <div class="progress-bar" style="max-width:300px;margin:20px auto 0;height:4px;"><div class="progress-fill" style="width:100%;animation:progressGlow 2s ease-in-out infinite;"></div></div>
       </div>
@@ -90,7 +90,7 @@ const App = {
       <div class="card" style="max-width:440px;margin:40px auto;text-align:center;">
         <div style="margin-bottom:24px;">
           <img src="img/logo.png" alt="Logo" class="login-logo-simple" style="width:56px;height:56px;filter:drop-shadow(0 0 12px var(--accent-glow));">
-          <h1 style="font-size:24px;margin:8px 0 4px;background:linear-gradient(135deg,var(--accent),#fff,var(--info));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200%;animation:gradientShift 4s ease infinite;">Chile Metropolitano</h1>
+          <h1 style="font-size:24px;margin:8px 0 4px;background:linear-gradient(135deg,var(--accent),#fff,var(--info));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200%;animation:gradientShift 4s ease infinite;">Chile Life</h1>
           <p style="color:var(--text-muted);font-size:14px;margin-top:4px;">Ingresa con tu cuenta de Discord para acceder al portal.</p>
         </div>
         ${oauthError ? `<div class="alert alert-danger" style="margin-bottom:16px;"><i class="fas fa-times-circle"></i> No se pudo verificar tu cuenta de Discord. Intenta de nuevo.</div>` : ''}
@@ -220,7 +220,7 @@ const App = {
       'gestion-usuarios': 'Gestión de Usuarios',
     };
 
-    title.textContent = titles[page] || 'Chile Metropolitano';
+    title.textContent = titles[page] || 'Chile Life';
 
     const backBtn = document.getElementById('back-btn');
     if (backBtn) {
