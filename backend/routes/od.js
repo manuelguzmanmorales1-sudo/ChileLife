@@ -37,14 +37,28 @@ router.delete('/grupos/:id', authMiddleware, requireRole('admin'), async (req, r
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+function normalizarRut(rut) {
+  return (rut || '').toString().replace(/[.\-\s]/g, '').toUpperCase();
+}
+
 router.post('/asignar-rol', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { rutDestino, rol } = req.body;
     if (!rutDestino || !rol) return res.status(400).json({ error: 'RUT y rol requeridos' });
     const { data: grupo, error: grupoErr } = await supabase.from('grupos_discord').select('*').eq('nombre', rol).single();
     if (grupoErr || !grupo) return res.status(404).json({ error: 'Grupo no encontrado' });
-    const { data: user, error: userErr } = await supabase.from('users').select('*').eq('rut', rutDestino).single();
-    if (userErr || !user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    // Búsqueda exacta primero (rápida); si no calza, compara ignorando puntos/guiones/espacios
+    let user = null;
+    const { data: exacto } = await supabase.from('users').select('*').eq('rut', rutDestino).maybeSingle();
+    if (exacto) {
+      user = exacto;
+    } else {
+      const buscado = normalizarRut(rutDestino);
+      const { data: candidatos } = await supabase.from('users').select('*').not('rut', 'is', null);
+      user = (candidatos || []).find(u => normalizarRut(u.rut) === buscado) || null;
+    }
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
     await supabase.from('users').update({ discord_rol: rol }).eq('id', user.id);
     const { data: grupoActualizado, error } = await supabase.from('grupos_discord').update({ miembros: grupo.miembros + 1 }).eq('id', grupo.id).select().single();

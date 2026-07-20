@@ -129,58 +129,6 @@ async function renderTienda() {
     );
   }).join('');
 
-  var adminHTML = '';
-  if (u.rol === 'admin') {
-    adminHTML =
-      '<div class="card" style="margin:16px;border:1px solid var(--accent);">' +
-        '<div class="card-header" style="background:var(--accent)11;">' +
-          '<h3><i class="fas fa-crown" style="color:var(--accent);"></i> Administracion de Tienda</h3>' +
-          '<button class="btn btn-sm btn-primary" onclick="adminTiendaMostrarForm()"><i class="fas fa-plus"></i> Agregar Item</button>' +
-        '</div>' +
-        '<div id="admin-tienda-form" style="padding:14px;display:none;background:var(--bg-card);border-bottom:1px solid var(--border-color);">' +
-          '<div class="grid-2" style="gap:10px;">' +
-            '<div class="form-group"><label>Nombre *</label><input class="form-control" id="at-nombre" placeholder="Nombre del item"></div>' +
-            '<div class="form-group"><label>Categoria *</label><select class="form-control" id="at-categoria">' +
-              tiendaCategorias.map(function(c) { return '<option value="' + c.id + '">' + c.nombre + '</option>'; }).join('') +
-            '</select></div>' +
-            '<div class="form-group"><label>Precio *</label><input class="form-control" id="at-precio" type="number" min="1" placeholder="Precio en pesos"></div>' +
-            '<div class="form-group"><label>Stock</label><input class="form-control" id="at-stock" type="number" min="0" value="10"></div>' +
-            '<div class="form-group"><label>Icono (FontAwesome)</label><input class="form-control" id="at-icon" placeholder="fa-box"></div>' +
-            '<div class="form-group"><label>Descripcion</label><input class="form-control" id="at-desc" placeholder="Descripcion del item"></div>' +
-          '</div>' +
-          '<div style="margin-top:10px;display:flex;gap:8px;">' +
-            '<input type="hidden" id="at-edit-id" value="">' +
-            '<button class="btn btn-primary" onclick="adminTiendaGuardar()"><i class="fas fa-save"></i> Guardar</button>' +
-            '<button class="btn btn-outline" onclick="adminTiendaCancelar()"><i class="fas fa-times"></i> Cancelar</button>' +
-          '</div>' +
-        '</div>' +
-        '<div style="padding:8px 14px;overflow-x:auto;">' +
-          '<table style="font-size:11px;">' +
-            '<thead><tr>' +
-              '<th>Item</th><th>Cat</th><th>Precio</th><th>Stock</th><th style="width:80px;">Acciones</th>' +
-            '</tr></thead>' +
-            '<tbody>' +
-              tiendaItems.map(function(item) {
-                var itemId = item._id || item.id;
-                return '<tr>' +
-                  '<td><strong>' + item.nombre + '</strong><br><small style="color:var(--text-muted);">' + item.desc + '</small></td>' +
-                  '<td>' + item.categoria + '</td>' +
-                  '<td style="color:var(--success);">$' + item.precio.toLocaleString() + '</td>' +
-                  '<td style="color:' + (item.stock <= 0 ? 'var(--danger)' : item.stock <= 3 ? 'var(--warning)' : 'var(--text-muted)') + ';">' + item.stock + '</td>' +
-                  '<td>' +
-                    '<button class="btn btn-sm btn-info" style="margin-right:4px;padding:2px 6px;" onclick="adminTiendaEditar(\'' + itemId + '\')" title="Editar"><i class="fas fa-edit"></i></button>' +
-                    '<button class="btn btn-sm btn-danger" style="padding:2px 6px;" onclick="adminTiendaEliminar(\'' + itemId + '\', \'' + item.nombre.replace(/'/g, "\\'") + '\')" title="Eliminar"><i class="fas fa-trash-alt"></i></button>' +
-                  '</td>' +
-                '</tr>';
-              }).join('') +
-              (tiendaItems.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No hay items en la tienda</td></tr>' : '') +
-            '</tbody>' +
-          '</table>' +
-        '</div>' +
-        '<div id="admin-tienda-result" style="padding:0 14px 14px;"></div>' +
-      '</div>';
-  }
-
   return (
     '<div class="card">' +
       '<div class="card-header">' +
@@ -192,8 +140,7 @@ async function renderTienda() {
       inventarioHTML +
       tabContents +
       '<div id="tienda-result"></div>' +
-      adminHTML +
-      (tiendaItems.length === 0 && u.rol !== 'admin' ? '<div style="text-align:center;padding:40px;color:var(--text-muted);"><i class="fas fa-store-slash" style="font-size:48px;display:block;margin-bottom:12px;opacity:0.5;"></i>La tienda esta vacia</div>' : '') +
+      (tiendaItems.length === 0 ? '<div style="text-align:center;padding:40px;color:var(--text-muted);"><i class="fas fa-store-slash" style="font-size:48px;display:block;margin-bottom:12px;opacity:0.5;"></i>La tienda esta vacia</div>' : '') +
     '</div>'
   );
 }
@@ -276,87 +223,6 @@ async function comprarCarrito() {
     tiendaItems = [];
     tiendaLoading = false;
     result.innerHTML = App.showAlert('Compra exitosa! ' + numItems + ' item(s) por $' + total.toLocaleString(), 'success');
-    App.navigate('tienda');
-  } catch (err) {
-    result.innerHTML = App.showAlert('Error: ' + err.message, 'danger');
-  }
-}
-
-function adminTiendaMostrarForm() {
-  var form = document.getElementById('admin-tienda-form');
-  form.style.display = 'block';
-  document.getElementById('at-edit-id').value = '';
-  document.getElementById('at-nombre').value = '';
-  document.getElementById('at-precio').value = '';
-  document.getElementById('at-stock').value = '10';
-  document.getElementById('at-icon').value = 'fa-box';
-  document.getElementById('at-desc').value = '';
-  document.getElementById('at-categoria').value = 'comunicacion';
-  document.getElementById('at-nombre').focus();
-}
-
-function adminTiendaCancelar() {
-  document.getElementById('admin-tienda-form').style.display = 'none';
-  document.getElementById('at-edit-id').value = '';
-}
-
-async function adminTiendaGuardar() {
-  var editId = document.getElementById('at-edit-id').value;
-  var nombre = document.getElementById('at-nombre').value.trim();
-  var precio = parseInt(document.getElementById('at-precio').value) || 0;
-  var stock = parseInt(document.getElementById('at-stock').value) || 0;
-  var icon = document.getElementById('at-icon').value.trim();
-  var desc = document.getElementById('at-desc').value.trim();
-  var categoria = document.getElementById('at-categoria').value;
-  var result = document.getElementById('admin-tienda-result');
-
-  if (!nombre || precio <= 0 || !categoria) {
-    result.innerHTML = App.showAlert('Nombre, precio y categoria son obligatorios', 'danger');
-    return;
-  }
-
-  try {
-    if (editId) {
-      await API.updateTiendaItem(editId, { nombre, precio, desc, icon, categoria, stock });
-      result.innerHTML = App.showAlert('Item "' + nombre + '" actualizado correctamente', 'success');
-    } else {
-      await API.createTiendaItem({ nombre, precio, desc, icon, categoria, stock });
-      result.innerHTML = App.showAlert('Item "' + nombre + '" creado correctamente', 'success');
-    }
-    adminTiendaCancelar();
-    tiendaItems = [];
-    tiendaLoading = false;
-    App.navigate('tienda');
-  } catch (err) {
-    result.innerHTML = App.showAlert('Error: ' + err.message, 'danger');
-  }
-}
-
-function adminTiendaEditar(id) {
-  var item = tiendaItems.find(function(x) { return x._id === id || x.id === id; });
-  if (!item) return;
-
-  var form = document.getElementById('admin-tienda-form');
-  form.style.display = 'block';
-  document.getElementById('at-edit-id').value = item._id || item.id;
-  document.getElementById('at-nombre').value = item.nombre;
-  document.getElementById('at-precio').value = item.precio;
-  document.getElementById('at-stock').value = item.stock;
-  document.getElementById('at-icon').value = item.icon || 'fa-box';
-  document.getElementById('at-desc').value = item.desc || '';
-  document.getElementById('at-categoria').value = item.categoria;
-  document.getElementById('at-nombre').focus();
-}
-
-async function adminTiendaEliminar(id, nombre) {
-  if (!confirm('Eliminar "' + nombre + '" de la tienda?\n\nEsta accion no se puede deshacer.')) return;
-
-  var result = document.getElementById('admin-tienda-result');
-  try {
-    await API.deleteTiendaItem(id);
-    result.innerHTML = App.showAlert('Item "' + nombre + '" eliminado de la tienda', 'success');
-    tiendaItems = [];
-    tiendaLoading = false;
     App.navigate('tienda');
   } catch (err) {
     result.innerHTML = App.showAlert('Error: ' + err.message, 'danger');
