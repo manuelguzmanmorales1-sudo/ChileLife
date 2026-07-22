@@ -53,7 +53,7 @@ async function renderAdminPanel() {
                   <td>$${(u.dinero || 0).toLocaleString()}</td>
                   <td style="color:var(--danger);">$${(u.dineroNegro || 0).toLocaleString()}</td>
                   <td>
-                    <select class="form-control" id="admin-rol-${u._id}" style="width:150px;display:inline-block;padding:4px 8px;font-size:12px;" onchange="adminCambiarRol('${u._id}', '${u.rut}', '${u.nombre.replace(/'/g, "\\'")}')">
+                    <select class="form-control" id="admin-rol-${u.id}" style="width:150px;display:inline-block;padding:4px 8px;font-size:12px;" onchange="adminCambiarRol('${u.id}', '${u.rut}', '${u.nombre.replace(/'/g, "\\'")}')">
                       <option value="">-- Seleccionar --</option>
                       <option value="ciudadano" ${u.rol === 'ciudadano' ? 'selected' : ''}>Ciudadano</option>
                       <option value="carabinero" ${u.rol === 'carabinero' ? 'selected' : ''}>Carabinero</option>
@@ -120,7 +120,7 @@ async function adminCambiarRol(id, rut, nombre) {
   const roleNames = { ciudadano: 'Ciudadano', carabinero: 'Carabinero', pdi: 'PDI', medico: 'Médico', municipal: 'Municipal', admin: 'Admin' };
 
   if (!confirm('¿Asignar rol ' + roleNames[nuevoRol] + ' a ' + nombre + ' (' + rut + ')?')) {
-    const u = DB.usuarios.find(x => x._id === id);
+    const u = DB.usuarios.find(x => x.id === id);
     if (u) select.value = u.rol;
     return;
   }
@@ -128,7 +128,7 @@ async function adminCambiarRol(id, rut, nombre) {
   try {
     const res = await API.updateUserRol(id, nuevoRol);
     if (res.success) {
-      const u = DB.usuarios.find(x => x._id === id);
+      const u = DB.usuarios.find(x => x.id === id);
       if (u) {
         u.rol = nuevoRol;
         u.rango = roleNames[nuevoRol];

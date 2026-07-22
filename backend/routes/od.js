@@ -109,22 +109,32 @@ router.post('/lavar', authMiddleware, async (req, res) => {
 // Transfiere dinero negro a otro ciudadano por RUT (sin comisión, es plata "entre privados")
 router.post('/transferir-negro', authMiddleware, async (req, res) => {
   try {
-    const { rutDestino, monto } = req.body;
+    const { rutDestino, monto, concepto } = req.body;
     const montoNum = parseInt(monto, 10);
     if (!rutDestino || !montoNum || montoNum <= 0) return res.status(400).json({ error: 'RUT destino y monto son obligatorios' });
 
-    const { data: origen, error: oError } = await supabase.from('users').select('dinero_negro').eq('id', req.user.id).single();
+    const { data: origen, error: oError } = await supabase.from('users').select('dinero_negro, historial_financiero').eq('id', req.user.id).single();
     if (oError || !origen) return res.status(404).json({ error: 'Usuario no encontrado' });
     if (montoNum > origen.dinero_negro) return res.status(400).json({ error: 'Dinero negro insuficiente' });
 
-    const { data: destino, error: dError } = await supabase.from('users').select('id, dinero_negro').eq('rut', rutDestino).single();
+    const { data: destino, error: dError } = await supabase.from('users').select('id, nombre, dinero_negro, historial_financiero').eq('rut', rutDestino).single();
     if (dError || !destino) return res.status(404).json({ error: 'Destinatario no encontrado' });
     if (destino.id === req.user.id) return res.status(400).json({ error: 'No puedes transferirte a ti mismo' });
 
-    await supabase.from('users').update({ dinero_negro: origen.dinero_negro - montoNum }).eq('id', req.user.id);
-    await supabase.from('users').update({ dinero_negro: destino.dinero_negro + montoNum }).eq('id', destino.id);
+    const nuevoOrigen = origen.dinero_negro - montoNum;
+    const nuevoDestino = destino.dinero_negro + montoNum;
+    const motivo = concepto || 'Pago en dinero negro';
 
-    res.json({ success: true, dineroNegro: origen.dinero_negro - montoNum });
+    const historialOrigen = origen.historial_financiero || [];
+    historialOrigen.push({ tipo: 'pago_negro', monto: -montoNum, concepto: motivo, saldoResultante: nuevoOrigen, fecha: new Date() });
+
+    const historialDestino = destino.historial_financiero || [];
+    historialDestino.push({ tipo: 'pago_negro', monto: montoNum, concepto: motivo, saldoResultante: nuevoDestino, fecha: new Date() });
+
+    await supabase.from('users').update({ dinero_negro: nuevoOrigen, historial_financiero: historialOrigen }).eq('id', req.user.id);
+    await supabase.from('users').update({ dinero_negro: nuevoDestino, historial_financiero: historialDestino }).eq('id', destino.id);
+
+    res.json({ success: true, dineroNegro: nuevoOrigen, destinatario: destino.nombre, concepto: motivo });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

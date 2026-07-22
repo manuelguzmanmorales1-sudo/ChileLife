@@ -149,15 +149,20 @@ function odDinero() {
         <div id="od-lavar-result"></div>
         <hr style="border-color:var(--border);margin:12px 0;">
         <form onsubmit="event.preventDefault();odTransferirNegro()">
+          <h4 style="margin-bottom:10px;"><i class="fas fa-hand-holding-usd"></i> Pagar con Dinero Negro</h4>
           <div class="form-group">
-            <label>RUT Destinatario</label>
+            <label>RUT del destinatario</label>
             <input class="form-control" id="od-transf-rut" placeholder="RUT">
           </div>
           <div class="form-group">
-            <label>Monto</label>
+            <label>Monto a pagar</label>
             <input class="form-control" id="od-transf-monto" type="number" placeholder="Monto">
           </div>
-          <button type="submit" class="btn btn-danger btn-block"><i class="fas fa-exchange-alt"></i> Transferir Dinero Negro</button>
+          <div class="form-group">
+            <label>Motivo (opcional)</label>
+            <input class="form-control" id="od-transf-concepto" placeholder="Ej: Pago de servicio, mercancía, etc.">
+          </div>
+          <button type="submit" class="btn btn-danger btn-block"><i class="fas fa-money-check-alt"></i> Pagar</button>
         </form>
         <div id="od-transf-result"></div>
       </div>
@@ -190,21 +195,23 @@ async function odTransferirNegro() {
   if (!u) return;
   const rut = document.getElementById('od-transf-rut').value.trim();
   const monto = parseInt(document.getElementById('od-transf-monto').value);
+  const concepto = document.getElementById('od-transf-concepto').value.trim();
   const result = document.getElementById('od-transf-result');
   if (!rut || !monto || monto <= 0) { result.innerHTML = App.showAlert('Datos inválidos', 'danger'); return; }
   if (monto > u.dineroNegro) { result.innerHTML = App.showAlert('Dinero negro insuficiente', 'danger'); return; }
   const destino = DB.usuarios.find(user => user.rut === rut);
   if (!destino) { result.innerHTML = App.showAlert('Destinatario no encontrado', 'danger'); return; }
   try {
-    const res = await API.transferirNegro(rut, monto);
+    const res = await API.transferirNegro(rut, monto, concepto);
     Auth.currentUser.dineroNegro = res.dineroNegro;
     localStorage.setItem('wcrp_user', JSON.stringify(Auth.currentUser));
-    result.innerHTML = App.showAlert(`Transferencia de $${monto.toLocaleString()} a ${destino.nombre}`, 'success');
+    result.innerHTML = App.showAlert(`Pagaste $${monto.toLocaleString()} a ${destino.nombre}${concepto ? ' — ' + concepto : ''}`, 'success');
   } catch (e) {
-    result.innerHTML = App.showAlert('Error al transferir', 'danger');
+    result.innerHTML = App.showAlert(e.message || 'Error al pagar', 'danger');
   }
   document.getElementById('od-transf-rut').value = '';
   document.getElementById('od-transf-monto').value = '';
+  document.getElementById('od-transf-concepto').value = '';
 }
 
 function odExp() {
