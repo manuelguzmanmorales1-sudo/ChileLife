@@ -103,6 +103,10 @@ const API = {
     return this.fetch(`/investigaciones/${id}/toggle`, { method: 'PUT' });
   },
 
+  async agregarEvidenciaInvestigacion(id, texto) {
+    return this.fetch(`/investigaciones/${id}/evidencia`, { method: 'POST', body: JSON.stringify({ texto }) });
+  },
+
   async getPersonasBuscadas(estado = '') {
     return this.fetch(`/personas-buscadas${estado ? `?estado=${estado}` : ''}`);
   },

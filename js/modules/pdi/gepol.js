@@ -7,6 +7,7 @@ const GepolUI = {
   incautaciones: [],
   inventarioCiudadano: null,
   inventarioRut: '',
+  investigaciones: [],
 
   cargarTab(tab) {
     this.tabActual = tab;
@@ -14,6 +15,7 @@ const GepolUI = {
     if (tab === 'buscados') this.cargarBuscados();
     if (tab === 'bienes') this.cargarBienes();
     if (tab === 'incautado') this.cargarIncautaciones();
+    if (tab === 'investigaciones') this.cargarInvestigaciones();
     this.render();
   },
 
@@ -26,7 +28,8 @@ const GepolUI = {
       bienes: () => this.renderBienes(),
       incautado: () => this.renderIncautado(),
       buscados: () => this.renderBuscados(),
-      vehiculos: () => this.renderVehiculos()
+      vehiculos: () => this.renderVehiculos(),
+      investigaciones: () => this.renderInvestigaciones()
     };
     cont.innerHTML = renderers[this.tabActual] ? renderers[this.tabActual]() : '';
   },
@@ -46,13 +49,19 @@ const GepolUI = {
     if (!this.resultadoConsulta) return '<p style="color:var(--text-muted);">Ingresa un RUT para ver su ficha completa.</p>';
     const data = this.resultadoConsulta;
     return `
+      ${data.investigado ? `
+      <div class="card" style="border:1px solid var(--danger);background:rgba(229,72,77,0.08);margin-bottom:16px;">
+        <p style="margin:0;color:var(--danger);font-weight:700;"><i class="fas fa-exclamation-triangle"></i> INVESTIGADO — esta persona tiene una investigación activa:</p>
+        <ul style="margin:8px 0 0 20px;font-size:13px;">
+          ${data.investigaciones.map(i => `<li>${i.titulo} (${i.tipo}) — a cargo de ${i.encargado}, abierta el ${i.fecha}</li>`).join('')}
+        </ul>
+      </div>` : ''}
       <div class="grid-2">
         <div class="card">
           <div class="card-header"><h3>Datos del Ciudadano</h3></div>
           <p><strong>Nombre:</strong> ${data.ciudadano.nombre}</p>
           <p><strong>RUT:</strong> ${data.ciudadano.rut}</p>
           <p><strong>Dirección registrada:</strong> ${data.ciudadano.direccion || 'No registrada'}</p>
-          <p><strong>Teléfono:</strong> ${data.ciudadano.telefono || '—'}</p>
           <p><strong>Edad:</strong> ${data.ciudadano.edad || '—'}</p>
           <p><strong>Nacionalidad:</strong> ${data.ciudadano.nacionalidad || '—'}</p>
         </div>
@@ -60,11 +69,10 @@ const GepolUI = {
           <div class="card-header"><h3>Vehículos Asociados</h3></div>
           ${data.vehiculos.length ? `
           <table>
-            <thead><tr><th>Patente</th><th>Marca</th><th>Modelo</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Patente</th><th>Marca</th><th>Modelo</th><th>Año</th></tr></thead>
             <tbody>
               ${data.vehiculos.map(v => `<tr>
-                <td>${v.patente}</td><td>${v.marca}</td><td>${v.modelo}</td>
-                <td><span class="badge ${v.estado === 'Sin encargo' ? 'badge-success' : 'badge-danger'}">${v.estado}</span></td>
+                <td>${v.patente || '—'}</td><td>${v.marca}</td><td>${v.modelo}</td><td>${v.anio || '—'}</td>
               </tr>`).join('')}
             </tbody>
           </table>` : '<p style="color:var(--text-muted);">Sin vehículos registrados</p>'}
@@ -452,6 +460,114 @@ const GepolUI = {
     } catch (e) {
       App.showAlertMsg(e.message || 'No se pudo actualizar', 'danger');
     }
+  },
+
+  // ===== INVESTIGACIONES =====
+  async cargarInvestigaciones() {
+    try {
+      this.investigaciones = await API.getInvestigaciones();
+    } catch (e) {
+      this.investigaciones = [];
+    }
+  },
+
+  renderInvestigaciones() {
+    const u = Auth.currentUser;
+    return `
+      <div class="card" style="background:var(--bg-input);margin-bottom:16px;">
+        <div class="card-header"><h4 style="margin:0;"><i class="fas fa-folder-plus"></i> Abrir Investigación</h4></div>
+        <div class="form-group"><label>RUT de la persona investigada *</label><input class="form-control" id="inv-rut" placeholder="Ej: 12.345.678-9"></div>
+        <div class="form-group"><label>Título *</label><input class="form-control" id="inv-titulo" placeholder="Ej: Operación Amanecer"></div>
+        <div class="form-group">
+          <label>Tipo</label>
+          <select class="form-control" id="inv-tipo">
+            <option value="Narcotráfico">Narcotráfico</option>
+            <option value="Robos">Robos</option>
+            <option value="Homicidio">Homicidio</option>
+            <option value="Fraude">Fraude</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Explicación de la investigación *</label><textarea class="form-control" id="inv-descripcion" rows="3" placeholder="Explica de qué se trata la investigación..."></textarea></div>
+        <button class="btn btn-primary btn-block" onclick="GepolUI.abrirInvestigacion()"><i class="fas fa-folder-plus"></i> Abrir Investigación</button>
+        <div id="inv-abrir-result"></div>
+      </div>
+
+      <h4 style="margin-bottom:10px;">Investigaciones (${this.investigaciones.length})</h4>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        ${this.investigaciones.map(inv => {
+          const esEncargado = u && (u.id === inv.userId || u.rol === 'admin');
+          return `
+          <div class="card" style="background:var(--bg-input);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div>
+                <strong>${inv.titulo}</strong> <span class="badge badge-info">${inv.tipo}</span>
+                <span class="badge ${inv.estado === 'Activa' ? 'badge-danger' : 'badge-success'}">${inv.estado}</span>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">RUT investigado: <strong>${inv.rut}</strong> · A cargo de: ${inv.encargado} · Abierta: ${inv.fecha}</div>
+              </div>
+              ${esEncargado ? `<button class="btn btn-sm ${inv.estado === 'Activa' ? 'btn-danger' : 'btn-success'}" onclick="GepolUI.toggleInvestigacion('${inv._id}')">${inv.estado === 'Activa' ? 'Cerrar' : 'Reabrir'}</button>` : ''}
+            </div>
+            <p style="font-size:13px;margin:10px 0;">${inv.descripcion}</p>
+            <div style="border-top:1px solid var(--glass-border);padding-top:10px;">
+              <strong style="font-size:12px;color:var(--text-muted);">PRUEBAS (${inv.evidencias.length})</strong>
+              <ul style="margin:6px 0 0 18px;font-size:13px;">
+                ${inv.evidencias.map(ev => `<li>${ev.texto} <span style="color:var(--text-muted);font-size:11px;">— ${ev.autor}, ${new Date(ev.fecha).toLocaleString('es-CL')}</span></li>`).join('') || '<li style="color:var(--text-muted);list-style:none;margin-left:-18px;">Sin pruebas todavía</li>'}
+              </ul>
+              ${inv.estado === 'Activa' ? `
+              <div style="display:flex;gap:8px;margin-top:10px;">
+                <input class="form-control" id="ev-input-${inv._id}" placeholder="Agregar prueba (foto, testimonio, etc.)">
+                <button class="btn btn-sm btn-primary" onclick="GepolUI.agregarEvidencia('${inv._id}')"><i class="fas fa-plus"></i></button>
+              </div>` : ''}
+            </div>
+          </div>
+        `;
+        }).join('') || '<p style="color:var(--text-muted);">No hay investigaciones registradas</p>'}
+      </div>
+    `;
+  },
+
+  async abrirInvestigacion() {
+    const rut = document.getElementById('inv-rut').value.trim();
+    const titulo = document.getElementById('inv-titulo').value.trim();
+    const tipo = document.getElementById('inv-tipo').value;
+    const descripcion = document.getElementById('inv-descripcion').value.trim();
+    const result = document.getElementById('inv-abrir-result');
+    if (!rut || !titulo || !descripcion) {
+      result.innerHTML = App.showAlert('RUT, título y explicación son obligatorios', 'danger');
+      return;
+    }
+    try {
+      await API.createInvestigacion({ rut, titulo, tipo, descripcion });
+      result.innerHTML = App.showAlert('Investigación abierta correctamente', 'success');
+      ['inv-rut', 'inv-titulo', 'inv-descripcion'].forEach(id => document.getElementById(id).value = '');
+      await this.cargarInvestigaciones();
+      this.render();
+    } catch (e) {
+      result.innerHTML = App.showAlert(e.message || 'No se pudo abrir la investigación', 'danger');
+    }
+  },
+
+  async agregarEvidencia(id) {
+    const input = document.getElementById(`ev-input-${id}`);
+    const texto = input.value.trim();
+    if (!texto) return;
+    try {
+      await API.agregarEvidenciaInvestigacion(id, texto);
+      await this.cargarInvestigaciones();
+      this.render();
+    } catch (e) {
+      alert(e.message || 'No se pudo agregar la prueba');
+    }
+  },
+
+  async toggleInvestigacion(id) {
+    try {
+      await API.toggleInvestigacion(id);
+      await this.cargarInvestigaciones();
+      this.render();
+    } catch (e) {
+      alert(e.message || 'No se pudo cambiar el estado');
+    }
   }
 };
 
@@ -466,6 +582,7 @@ async function renderGEPOL() {
         <button class="chip gepol-tab" data-tab="incautado" onclick="GepolUI.cargarTab('incautado')"><i class="fas fa-box"></i> Incautado</button>
         <button class="chip gepol-tab" data-tab="buscados" onclick="GepolUI.cargarTab('buscados')"><i class="fas fa-user-secret"></i> Personas Buscadas</button>
         <button class="chip gepol-tab" data-tab="vehiculos" onclick="GepolUI.cargarTab('vehiculos')"><i class="fas fa-car"></i> Vehículos</button>
+        <button class="chip gepol-tab" data-tab="investigaciones" onclick="GepolUI.cargarTab('investigaciones')"><i class="fas fa-folder-open"></i> Investigaciones</button>
       </div>
     </div>
     <div class="card">

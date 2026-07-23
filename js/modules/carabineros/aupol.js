@@ -47,13 +47,19 @@ const AupolUI = {
     if (!this.resultadoConsulta) return '<p style="color:var(--text-muted);">Ingresa un RUT para ver su ficha completa.</p>';
     const data = this.resultadoConsulta;
     return `
+      ${data.investigado ? `
+      <div class="card" style="border:1px solid var(--danger);background:rgba(229,72,77,0.08);margin-bottom:16px;">
+        <p style="margin:0;color:var(--danger);font-weight:700;"><i class="fas fa-exclamation-triangle"></i> INVESTIGADO — esta persona tiene una investigación activa:</p>
+        <ul style="margin:8px 0 0 20px;font-size:13px;">
+          ${data.investigaciones.map(i => `<li>${i.titulo} (${i.tipo}) — a cargo de ${i.encargado}, abierta el ${i.fecha}</li>`).join('')}
+        </ul>
+      </div>` : ''}
       <div class="grid-2">
         <div class="card">
           <div class="card-header"><h3>Datos del Ciudadano</h3></div>
           <p><strong>Nombre:</strong> ${data.ciudadano.nombre}</p>
           <p><strong>RUT:</strong> ${data.ciudadano.rut}</p>
           <p><strong>Dirección registrada:</strong> ${data.ciudadano.direccion || 'No registrada'}</p>
-          <p><strong>Teléfono:</strong> ${data.ciudadano.telefono || '—'}</p>
           <p><strong>Edad:</strong> ${data.ciudadano.edad || '—'}</p>
           <p><strong>Nacionalidad:</strong> ${data.ciudadano.nacionalidad || '—'}</p>
         </div>
@@ -61,11 +67,10 @@ const AupolUI = {
           <div class="card-header"><h3>Vehículos Asociados</h3></div>
           ${data.vehiculos.length ? `
           <table>
-            <thead><tr><th>Patente</th><th>Marca</th><th>Modelo</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Patente</th><th>Marca</th><th>Modelo</th><th>Año</th></tr></thead>
             <tbody>
               ${data.vehiculos.map(v => `<tr>
-                <td>${v.patente}</td><td>${v.marca}</td><td>${v.modelo}</td>
-                <td><span class="badge ${v.estado === 'Sin encargo' ? 'badge-success' : 'badge-danger'}">${v.estado}</span></td>
+                <td>${v.patente || '—'}</td><td>${v.marca}</td><td>${v.modelo}</td><td>${v.anio || '—'}</td>
               </tr>`).join('')}
             </tbody>
           </table>` : '<p style="color:var(--text-muted);">Sin vehículos registrados</p>'}
