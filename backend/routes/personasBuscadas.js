@@ -48,7 +48,7 @@ router.put('/:id/capturar', authMiddleware, requireRole('carabinero', 'pdi', 'ad
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, requireRole('carabinero', 'pdi', 'admin'), async (req, res) => {
   try {
     const { error } = await supabase.from('personas_buscadas').delete().eq('id', req.params.id);
     if (error) throw error;

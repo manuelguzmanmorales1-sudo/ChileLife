@@ -53,7 +53,7 @@ router.post('/', authMiddleware, requireRole('admin'), async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { funcionario, rut, motivo, fecha, estado } = req.body;
     const updates = {};
@@ -77,7 +77,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { error } = await supabase.from('sumarios').delete().eq('id', req.params.id);
     if (error) throw error;

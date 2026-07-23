@@ -68,7 +68,7 @@ router.put('/:id/pagar', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, requireRole('carabinero', 'municipal', 'admin'), async (req, res) => {
   try {
     const { error } = await supabase.from('multas').delete().eq('id', req.params.id);
     if (error) throw error;

@@ -46,6 +46,8 @@ router.post('/desde-inventario', authMiddleware, requireRole('carabinero', 'pdi'
 
 router.get('/', authMiddleware, async (req, res) => {
   try {
+    const rolesPoliciales = ['carabinero', 'pdi', 'admin'];
+    if (!rolesPoliciales.includes(req.user.rol)) return res.json([]);
     const { institucion, estado } = req.query;
     let query = supabase.from('incautaciones').select('*');
     if (institucion) query = query.eq('institucion', institucion);
