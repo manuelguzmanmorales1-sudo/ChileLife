@@ -114,6 +114,18 @@ const GepolUI = {
       </div>
 
       <div class="card">
+        <div class="card-header"><h3>Historial de Detenciones</h3></div>
+        ${data.detenciones.length ? `
+        <table>
+          <thead><tr><th>Motivo</th><th>Oficial</th><th>Institución</th><th>Fecha</th></tr></thead>
+          <tbody>
+            ${data.detenciones.map(d => `<tr><td>${d.motivo}</td><td>${d.oficial}</td><td>${d.institucion}</td><td>${d.fecha}</td></tr>`).join('')}
+          </tbody>
+        </table>` : '<p style="color:var(--text-muted);">Sin detenciones registradas</p>'}
+        <button class="btn btn-sm btn-outline" style="margin-top:10px;" onclick="GepolUI.abrirFormDetencion('${data.ciudadano.rut}','${data.ciudadano.nombre.replace(/'/g,"")}')"><i class="fas fa-handcuffs"></i> Registrar Detención</button>
+      </div>
+
+      <div class="card">
         <div class="card-header">
           <h3><i class="fas fa-briefcase"></i> Pertenencias</h3>
           <button class="btn btn-info" style="padding:6px 14px;font-size:13px;" onclick="GepolUI.verPertenencias('${data.ciudadano.rut}')"><i class="fas fa-eye"></i> Ver ficha completa</button>
@@ -145,7 +157,27 @@ const GepolUI = {
         </div>
       `;
     } catch (e) {
-      cont.innerHTML = App.showAlert(e.message || 'No se pudo cargar la ficha', 'danger');
+      if (e.message && e.message.includes('orden de allanamiento')) {
+        cont.innerHTML = `
+          <div class="alert alert-danger" style="margin-bottom:10px;"><i class="fas fa-gavel"></i> Necesitas una orden de allanamiento para ver las pertenencias de esta persona.</div>
+          <div class="form-group"><label>Motivo de la orden</label><input class="form-control" id="orden-motivo-${rut.replace(/\W/g,'')}" placeholder="Ej: Sospecha de posesión de mercancía robada"></div>
+          <button class="btn btn-danger" onclick="GepolUI.solicitarOrden('${rut}')"><i class="fas fa-gavel"></i> Solicitar Orden y Ver Ficha</button>
+        `;
+      } else {
+        cont.innerHTML = App.showAlert(e.message || 'No se pudo cargar la ficha', 'danger');
+      }
+    }
+  },
+
+  async solicitarOrden(rut) {
+    const inputId = 'orden-motivo-' + rut.replace(/\W/g, '');
+    const motivo = document.getElementById(inputId).value.trim();
+    if (!motivo) { alert('Escribe el motivo de la orden'); return; }
+    try {
+      await API.solicitarOrdenAllanamiento(rut, motivo);
+      await this.verPertenencias(rut);
+    } catch (e) {
+      alert(e.message || 'No se pudo solicitar la orden');
     }
   },
 
@@ -567,6 +599,28 @@ const GepolUI = {
       this.render();
     } catch (e) {
       alert(e.message || 'No se pudo cambiar el estado');
+    }
+  },
+
+  abrirFormDetencion(rut, nombre) {
+    App.showModal('Registrar Detención', `
+      <form onsubmit="event.preventDefault();GepolUI.guardarDetencion('${rut}')">
+        <p><strong>Detenido:</strong> ${nombre} (${rut})</p>
+        <div class="form-group"><label>Motivo *</label><textarea class="form-control" id="det-motivo" rows="3" placeholder="Explica el motivo de la detención..."></textarea></div>
+        <button type="submit" class="btn btn-danger btn-block"><i class="fas fa-handcuffs"></i> Registrar Detención</button>
+      </form>
+    `);
+  },
+
+  async guardarDetencion(rut) {
+    const motivo = document.getElementById('det-motivo').value.trim();
+    if (!motivo) { alert('Escribe el motivo'); return; }
+    try {
+      await API.crearDetencion({ rutDetenido: rut, motivo, institucion: 'PDI' });
+      document.getElementById('modal-overlay').classList.add('hidden');
+      await this.consultarRut();
+    } catch (e) {
+      alert(e.message || 'No se pudo registrar la detención');
     }
   }
 };

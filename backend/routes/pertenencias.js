@@ -37,9 +37,27 @@ router.get('/mias', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ===== Ficha de pertenencias de otra persona (solo AUPOL/GEPOL/admin) =====
+// ===== Solicitar una orden de allanamiento (requerida antes de ver la ficha de otra persona) =====
+router.post('/orden', authMiddleware, requireRole('carabinero', 'pdi', 'admin'), async (req, res) => {
+  try {
+    const { rut, motivo } = req.body;
+    if (!rut || !motivo || !motivo.trim()) return res.status(400).json({ error: 'RUT y motivo de la orden son obligatorios' });
+    const { data, error } = await supabase.from('ordenes_allanamiento').insert({
+      rut, motivo: motivo.trim(), solicitado_por_id: req.user.id, solicitado_por_nombre: req.user.nombre,
+      institucion: req.user.rol === 'pdi' ? 'PDI' : 'Carabineros'
+    }).select().single();
+    if (error) throw error;
+    res.status(201).json({ _id: data.id, rut: data.rut, motivo: data.motivo });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ===== Ficha de pertenencias de otra persona (solo AUPOL/GEPOL/admin, con orden de allanamiento previa) =====
 router.get('/:rut', authMiddleware, requireRole('carabinero', 'pdi', 'admin'), async (req, res) => {
   try {
+    if (req.user.rol !== 'admin') {
+      const { data: orden } = await supabase.from('ordenes_allanamiento').select('id').eq('rut', req.params.rut).eq('solicitado_por_id', req.user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (!orden) return res.status(403).json({ error: 'Necesitas una orden de allanamiento para revisar las pertenencias de esta persona', requiereOrden: true });
+    }
     const ficha = await armarFicha(req.params.rut);
     if (!ficha) return res.status(404).json({ error: 'Persona no encontrada' });
     res.json(ficha);

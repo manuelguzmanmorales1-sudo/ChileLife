@@ -50,6 +50,7 @@ const App = {
 
       if (loggedIn) {
         await API.loadAll();
+        NotifUI.iniciarPolling();
         this.applyRoleFilter();
       } else {
         this.hideAllNavSections();
@@ -139,7 +140,7 @@ const App = {
 
   getAllowedPages() {
     const role = Auth.currentUser ? Auth.currentUser.rol : 'ciudadano';
-    const common = ['inicio', 'dashboard', 'dni', 'banco', 'tienda', 'concesionario', 'inventario', 'od-sistema', 'ranking', 'casino'];
+    const common = ['inicio', 'dashboard', 'dni', 'banco', 'tienda', 'concesionario', 'inventario', 'od-sistema', 'ranking', 'casino', 'mensajes', 'emergencia-reportar'];
     const rolePages = {
       ciudadano: [],
       carabinero: ['carabineros-comisaria', 'carabineros-aupol'],
@@ -166,6 +167,8 @@ const App = {
       'municipalidad-seguridad': () => renderSeguridad(),
       'od-sistema': () => renderODSistema(),
       casino: () => renderCasino(),
+      mensajes: () => renderMensajes(),
+      'emergencia-reportar': () => renderEmergenciaReportar(),
       ranking: async () => await renderRanking(),
       'admin-panel': async () => await renderAdminPanel(),
       'panel-staff': async () => await renderPanelStaff(),
@@ -216,6 +219,8 @@ const App = {
       'municipalidad-seguridad': 'SNSM - Sistema Nacional de Seguridad Municipal',
       'od-sistema': 'Sistema OD',
       casino: 'Casino',
+      mensajes: 'Mensajería',
+      'emergencia-reportar': 'Reportar Emergencia (911)',
       ranking: 'Ranking — Top 10',
       'admin-panel': 'Panel de Administración',
       'panel-staff': 'Panel de Staff',
@@ -329,6 +334,8 @@ const App = {
       'municipalidad-seguridad':{ icon:'fa-shield-alt',   color:'#9b59b6', title:'SNSM',              desc:'Base de datos ciudadana municipal', roles:['municipal','admin'] },
       'od-sistema':             { icon:'fa-cogs',         color:'#f1c40f', title:'Sistema OD',        desc:'Mercado negro y organizaciones',  roles:['ciudadano','carabinero','pdi','municipal','admin'] },
       casino:                   { icon:'fa-dice',         color:'#e74c3c', title:'Casino',            desc:'Ruleta, blackjack, minas y más',  roles:['ciudadano','carabinero','pdi','municipal','admin'] },
+      mensajes:                 { icon:'fa-comment-dots', color:'var(--info)', title:'Mensajería',     desc:'Chatea con otros ciudadanos',    roles:['ciudadano','carabinero','pdi','municipal','admin'] },
+      'emergencia-reportar':    { icon:'fa-phone',        color:'var(--danger)', title:'Reportar 911',  desc:'Reporta una emergencia en vivo',  roles:['ciudadano','carabinero','pdi','municipal','admin'] },
       ranking:                  { icon:'fa-trophy',       color:'#f1c40f', title:'Ranking',           desc:'Top 10 con más plata',            roles:['ciudadano','carabinero','pdi','municipal','admin'] },
       'admin-panel':            { icon:'fa-crown',        color:'#f1c40f', title:'Panel Admin',       desc:'Administración del servidor',     roles:['admin'] },
       'panel-staff':            { icon:'fa-user-shield',  color:'#DA291C', title:'Panel de Staff',    desc:'Cédulas, vehículos, propiedades, saldos y más', roles:['admin'] },

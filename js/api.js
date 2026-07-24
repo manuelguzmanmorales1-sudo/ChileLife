@@ -506,5 +506,65 @@ const API = {
   },
   async casinoMinasRetirar(id) {
     return this.fetch(`/casino/minas/${id}/retirar`, { method: 'POST' });
+  },
+
+  // ===== Notificaciones =====
+  async getNotificaciones() {
+    return this.fetch('/notificaciones');
+  },
+  async getNotificacionesNoLeidas() {
+    return this.fetch('/notificaciones/no-leidas');
+  },
+  async marcarNotificacionLeida(id) {
+    return this.fetch(`/notificaciones/${id}/leer`, { method: 'PUT' });
+  },
+  async marcarTodasLeidas() {
+    return this.fetch('/notificaciones/leer-todas', { method: 'PUT' });
+  },
+
+  // ===== Mensajería =====
+  async getConversaciones() {
+    return this.fetch('/mensajes/conversaciones');
+  },
+  async getMensajesNoLeidos() {
+    return this.fetch('/mensajes/no-leidos');
+  },
+  async getConversacion(contactoId) {
+    return this.fetch(`/mensajes/conversacion/${contactoId}`);
+  },
+  async enviarMensaje(rutDestino, texto) {
+    return this.fetch('/mensajes', { method: 'POST', body: JSON.stringify({ rutDestino, texto }) });
+  },
+
+  // ===== Emergencias (911) =====
+  async reportarEmergencia(descripcion, ubicacion) {
+    return this.fetch('/emergencias', { method: 'POST', body: JSON.stringify({ descripcion, ubicacion }) });
+  },
+  async getEmergencias(estado = '') {
+    return this.fetch(`/emergencias${estado ? '?estado=' + estado : ''}`);
+  },
+  async atenderEmergencia(id) {
+    return this.fetch(`/emergencias/${id}/atender`, { method: 'PUT' });
+  },
+  async descartarEmergencia(id) {
+    return this.fetch(`/emergencias/${id}/descartar`, { method: 'PUT' });
+  },
+
+  // ===== Detenciones =====
+  async getDetenciones(rut = '') {
+    return this.fetch(`/detenciones${rut ? '?rut=' + rut : ''}`);
+  },
+  async crearDetencion(data) {
+    return this.fetch('/detenciones', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  // ===== Órdenes de allanamiento =====
+  async solicitarOrdenAllanamiento(rut, motivo) {
+    return this.fetch('/pertenencias/orden', { method: 'POST', body: JSON.stringify({ rut, motivo }) });
+  },
+
+  // ===== Dashboard Admin =====
+  async getAdminStats() {
+    return this.fetch('/auth/admin-stats');
   }
 };

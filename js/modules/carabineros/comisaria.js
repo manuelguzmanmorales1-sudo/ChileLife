@@ -11,7 +11,19 @@ function renderComisaria() {
     'Testigos', 'Evidencias', 'Revisión y Envío'
   ];
 
+  setTimeout(() => cargarEmergenciasVivo(), 0);
+  if (window._emergenciasInterval) clearInterval(window._emergenciasInterval);
+  window._emergenciasInterval = setInterval(cargarEmergenciasVivo, 10000);
+
   return `
+    <div class="card" id="comisaria-emergencias">
+      <div class="card-header">
+        <h3><i class="fas fa-phone" style="color:var(--danger);"></i> Emergencias 911 (en vivo)</h3>
+        <span class="badge badge-danger" id="emergencias-badge">0 pendientes</span>
+      </div>
+      <div id="comisaria-emergencias-lista"><p style="color:var(--text-muted);">Cargando...</p></div>
+    </div>
+
     <div class="card">
       <div class="card-header">
         <h3><i class="fas fa-building"></i> Comisaría Virtual - Carabineros de Santiago Prime</h3>
@@ -221,4 +233,38 @@ function verDenuncia(id) {
     <p><strong>Denunciante:</strong> ${d.ciudadano} ${d.anonimo ? '<span class="badge badge-warning">Anónimo</span>' : ''}</p>
     <p><strong>Institución:</strong> ${d.institucion}</p>
   `);
+}
+
+async function cargarEmergenciasVivo() {
+  const cont = document.getElementById('comisaria-emergencias-lista');
+  if (!cont) { clearInterval(window._emergenciasInterval); return; }
+  try {
+    const emergencias = await API.getEmergencias('Pendiente');
+    const badge = document.getElementById('emergencias-badge');
+    if (badge) badge.textContent = `${emergencias.length} pendientes`;
+    cont.innerHTML = emergencias.length ? emergencias.map(e => `
+      <div style="background:var(--bg-input);border-left:3px solid var(--danger);border-radius:var(--radius);padding:12px 16px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;">
+          <strong>${e.nombreReportante}</strong>
+          <span style="font-size:11px;color:var(--text-muted);">${new Date(e.fecha).toLocaleTimeString('es-CL')}</span>
+        </div>
+        <p style="font-size:13px;margin:6px 0;">${e.descripcion}</p>
+        ${e.ubicacion ? `<p style="font-size:12px;color:var(--text-muted);"><i class="fas fa-map-marker-alt"></i> ${e.ubicacion}</p>` : ''}
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-sm btn-success" onclick="atenderEmergenciaVivo('${e._id}')"><i class="fas fa-check"></i> Atender</button>
+          <button class="btn btn-sm btn-outline" onclick="descartarEmergenciaVivo('${e._id}')"><i class="fas fa-times"></i> Descartar</button>
+        </div>
+      </div>
+    `).join('') : '<p style="color:var(--text-muted);">No hay emergencias pendientes.</p>';
+  } catch (e) {
+    cont.innerHTML = '<p style="color:var(--danger);">No se pudieron cargar las emergencias.</p>';
+  }
+}
+
+async function atenderEmergenciaVivo(id) {
+  try { await API.atenderEmergencia(id); await cargarEmergenciasVivo(); } catch (e) { alert(e.message); }
+}
+
+async function descartarEmergenciaVivo(id) {
+  try { await API.descartarEmergencia(id); await cargarEmergenciasVivo(); } catch (e) { alert(e.message); }
 }

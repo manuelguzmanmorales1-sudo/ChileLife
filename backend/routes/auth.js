@@ -215,6 +215,41 @@ const dniNumero = numeroDocumento;
   }
 });
 
+// Estadísticas para el Dashboard del Panel Admin
+router.get('/admin-stats', authMiddleware, requireRole('admin'), async (req, res) => {
+  try {
+    const { data: usuarios, error: uError } = await supabase.from('users').select('dinero, dinero_negro, rol, created_at');
+    if (uError) throw uError;
+
+    const dineroTotal = usuarios.reduce((a, u) => a + (u.dinero || 0), 0);
+    const dineroNegroTotal = usuarios.reduce((a, u) => a + (u.dinero_negro || 0), 0);
+    const porRol = {};
+    usuarios.forEach(u => { porRol[u.rol] = (porRol[u.rol] || 0) + 1; });
+
+    const hace7dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: multasSemana } = await supabase.from('multas').select('created_at').gte('created_at', hace7dias);
+    const { data: denunciasSemana } = await supabase.from('denuncias').select('created_at').gte('created_at', hace7dias);
+
+    // Multas por día de los últimos 7 días
+    const porDia = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      porDia[d.toISOString().split('T')[0]] = 0;
+    }
+    (multasSemana || []).forEach(m => {
+      const dia = m.created_at.split('T')[0];
+      if (porDia[dia] !== undefined) porDia[dia]++;
+    });
+
+    res.json({
+      dineroTotal, dineroNegroTotal, totalUsuarios: usuarios.length,
+      porRol, multasUltimaSemana: (multasSemana || []).length,
+      denunciasUltimaSemana: (denunciasSemana || []).length,
+      multasPorDia: Object.entries(porDia).map(([fecha, cantidad]) => ({ fecha, cantidad }))
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // Ranking de los que más plata (legal) tienen — visible para cualquier logueado, no solo admin
 router.get('/top-ricos', authMiddleware, async (req, res) => {
   try {

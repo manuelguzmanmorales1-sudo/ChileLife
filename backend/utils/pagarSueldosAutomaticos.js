@@ -1,4 +1,5 @@
 const { supabase } = require('../config/db');
+const { crearNotificacion } = require('./notificar');
 
 // Revisa cada rol con sueldo automático activo y le paga a quienes ya
 // cumplieron su frecuencia (o nunca cobraron), usando el campo
@@ -35,6 +36,7 @@ async function pagarSueldosAutomaticos() {
           historial_financiero: historial,
           ultimo_sueldo: new Date().toISOString()
         }).eq('id', u.id);
+        await crearNotificacion(u.id, 'sueldo', 'Sueldo pagado', `Recibiste $${cfg.sueldo.toLocaleString()} de sueldo automático.`);
       }
       console.log(`[Sueldos automáticos] Pagado a ${usuarios.length} usuario(s) con rol ${cfg.rol}`);
     }

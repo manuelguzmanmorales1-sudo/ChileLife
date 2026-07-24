@@ -15,11 +15,12 @@ router.get('/consulta/:rut', authMiddleware, soloStaff, async (req, res) => {
     const { data: ciudadano, error: cError } = await supabase.from('users').select('*').eq('rut', rut).single();
     if (cError || !ciudadano) return res.status(404).json({ error: 'Ciudadano no encontrado' });
 
-    const [antecedentesRes, multasRes, denunciasRes, investigacionesRes] = await Promise.all([
+    const [antecedentesRes, multasRes, denunciasRes, investigacionesRes, detencionesRes] = await Promise.all([
       supabase.from('antecedentes').select('*').eq('rut', rut).order('created_at', { ascending: false }),
       supabase.from('multas').select('*').eq('rut', rut).order('created_at', { ascending: false }),
       supabase.from('denuncias').select('*').eq('run', rut).order('created_at', { ascending: false }),
-      supabase.from('investigaciones').select('*').eq('rut', rut).eq('estado', 'Activa').order('created_at', { ascending: false })
+      supabase.from('investigaciones').select('*').eq('rut', rut).eq('estado', 'Activa').order('created_at', { ascending: false }),
+      supabase.from('detenciones').select('*').eq('rut_detenido', rut).order('created_at', { ascending: false })
     ]);
 
     res.json({
@@ -42,7 +43,8 @@ router.get('/consulta/:rut', authMiddleware, soloStaff, async (req, res) => {
       multas: (multasRes.data || []).map(m => ({ _id: m.id, motivo: m.motivo, monto: m.monto, pagada: m.pagada })),
       denuncias: (denunciasRes.data || []).map(d => ({ _id: d.id, tipo: d.tipo, fecha: d.fecha, estado: d.estado })),
       investigado: (investigacionesRes.data || []).length > 0,
-      investigaciones: (investigacionesRes.data || []).map(i => ({ titulo: i.titulo, tipo: i.tipo, encargado: i.encargado, fecha: i.fecha }))
+      investigaciones: (investigacionesRes.data || []).map(i => ({ titulo: i.titulo, tipo: i.tipo, encargado: i.encargado, fecha: i.fecha })),
+      detenciones: (detencionesRes.data || []).map(d => ({ motivo: d.motivo, oficial: d.oficial_nombre, institucion: d.institucion, fecha: d.fecha }))
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

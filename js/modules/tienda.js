@@ -228,3 +228,4 @@ async function comprarCarrito() {
     result.innerHTML = App.showAlert('Error: ' + err.message, 'danger');
   }
 }
+

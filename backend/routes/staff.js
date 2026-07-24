@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { supabase } = require('../config/db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
+const { crearNotificacion } = require('../utils/notificar');
 
 const soloAdmin = [authMiddleware, requireRole('admin')];
 
@@ -137,6 +138,7 @@ router.post('/asignar-sueldo', ...soloAdmin, async (req, res) => {
       tipo: 'Sueldo', descripcion: `Sueldo recurrente asignado: ${preset.nombre} ($${preset.monto.toLocaleString()} cada 3 días)`,
       monto: preset.monto, staffNombre: req.user.nombre, objetivoNombre: user.nombre
     });
+    await crearNotificacion(user.id, 'sueldo', 'Sueldo asignado', `Se te asignó "${preset.nombre}" — $${preset.monto.toLocaleString()} cada 3 días.`);
 
     res.json({ success: true, asignacion });
   } catch (err) {

@@ -7,6 +7,7 @@ const PanelStaffUI = {
   sueldosPreset: [],
   logs: [],
   mercadoNegro: [],
+  tienda: [],
 
   async cargarTab(tab) {
     this.tabActual = tab;
@@ -17,6 +18,7 @@ const PanelStaffUI = {
     if (tab === 'sueldos') this.sueldosPreset = await API.getSueldosPreset();
     if (tab === 'logs') this.logs = await API.getLogsStaff();
     if (tab === 'mercado-negro') this.mercadoNegro = await API.getAllBlackMarket();
+    if (tab === 'tienda') this.tienda = await API.getTiendaItems();
     this.render();
   },
 
@@ -33,7 +35,8 @@ const PanelStaffUI = {
       sueldos: () => this.renderSueldos(),
       inventario: () => this.renderInventarioBuscador(),
       logs: () => this.renderLogs(),
-      'mercado-negro': () => this.renderMercadoNegro()
+      'mercado-negro': () => this.renderMercadoNegro(),
+      tienda: () => this.renderTienda()
     };
     cont.innerHTML = renderers[this.tabActual] ? renderers[this.tabActual]() : '';
   },
@@ -540,6 +543,91 @@ const PanelStaffUI = {
     try { await API.deleteBlackMarketItem(id); await this.cargarTab('mercado-negro'); } catch (e) { alert(e.message); }
   },
 
+  renderTienda() {
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h4 style="margin:0;">Items de la Tienda (${this.tienda.length})</h4>
+        <button class="btn btn-primary" onclick="PanelStaffUI.abrirFormItemTienda()"><i class="fas fa-plus"></i> Nuevo Item</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${this.tienda.map(i => `
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-input);border-radius:var(--radius);padding:12px 16px;">
+            <div>
+              <strong>${i.nombre}</strong>
+              <div style="font-size:12px;color:var(--text-muted);">${i.categoria} · $${i.precio.toLocaleString()} · Stock: ${i.stock}</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-sm btn-outline" onclick="PanelStaffUI.editarItemTienda('${i._id}')"><i class="fas fa-pen"></i></button>
+              <button class="btn btn-sm btn-danger" onclick="PanelStaffUI.eliminarItemTienda('${i._id}', '${i.nombre.replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        `).join('') || '<p style="color:var(--text-muted);">No hay items en la tienda</p>'}
+      </div>
+    `;
+  },
+
+  abrirFormItemTienda(it) {
+    const item = it || {};
+    App.showModal(item._id ? 'Editar Item' : 'Nuevo Item de la Tienda', `
+      <form onsubmit="event.preventDefault();PanelStaffUI.guardarItemTienda('${item._id || ''}')">
+        <div class="form-group"><label>Nombre *</label><input class="form-control" id="ti-nombre" value="${item.nombre || ''}" required></div>
+        <div class="form-row">
+          <div class="form-group"><label>Precio *</label><input class="form-control" id="ti-precio" type="number" min="1" value="${item.precio || ''}" required></div>
+          <div class="form-group"><label>Stock</label><input class="form-control" id="ti-stock" type="number" min="0" value="${item.stock ?? 10}"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Categoría *</label>
+            <select class="form-control" id="ti-categoria">
+              <option value="comunicacion" ${item.categoria === 'comunicacion' ? 'selected' : ''}>Comunicación</option>
+              <option value="vestimenta" ${item.categoria === 'vestimenta' ? 'selected' : ''}>Vestimenta</option>
+              <option value="herramientas" ${item.categoria === 'herramientas' ? 'selected' : ''}>Herramientas</option>
+              <option value="medicina" ${item.categoria === 'medicina' ? 'selected' : ''}>Medicina</option>
+              <option value="policial" ${item.categoria === 'policial' ? 'selected' : ''}>Policial</option>
+              <option value="vehiculos" ${item.categoria === 'vehiculos' ? 'selected' : ''}>Vehículos</option>
+              <option value="alimentos" ${item.categoria === 'alimentos' ? 'selected' : ''}>Alimentos</option>
+              <option value="accesorios" ${item.categoria === 'accesorios' ? 'selected' : ''}>Accesorios</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Icono (FontAwesome)</label><input class="form-control" id="ti-icon" value="${item.icon || 'fa-box'}"></div>
+        </div>
+        <div class="form-group"><label>Descripción</label><input class="form-control" id="ti-desc" value="${item.desc || ''}"></div>
+        <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-save"></i> Guardar</button>
+      </form>
+    `);
+  },
+
+  editarItemTienda(id) {
+    const item = this.tienda.find(x => x._id === id);
+    if (item) this.abrirFormItemTienda(item);
+  },
+
+  async guardarItemTienda(id) {
+    const data = {
+      nombre: document.getElementById('ti-nombre').value.trim(),
+      precio: parseInt(document.getElementById('ti-precio').value) || 0,
+      stock: parseInt(document.getElementById('ti-stock').value) || 0,
+      categoria: document.getElementById('ti-categoria').value,
+      icon: document.getElementById('ti-icon').value.trim() || 'fa-box',
+      desc: document.getElementById('ti-desc').value.trim()
+    };
+    if (!data.nombre || data.precio <= 0 || !data.categoria) {
+      alert('Nombre, precio y categoría son obligatorios');
+      return;
+    }
+    try {
+      if (id) await API.updateTiendaItem(id, data);
+      else await API.createTiendaItem(data);
+      document.getElementById('modal-overlay').classList.add('hidden');
+      await this.cargarTab('tienda');
+    } catch (e) { alert(e.message); }
+  },
+
+  async eliminarItemTienda(id, nombre) {
+    if (!confirm(`¿Eliminar "${nombre}" de la tienda?`)) return;
+    try { await API.deleteTiendaItem(id); await this.cargarTab('tienda'); } catch (e) { alert(e.message); }
+  },
+
   // ===== LOGS =====
   renderLogs() {
     return `
@@ -585,6 +673,7 @@ async function renderPanelStaff() {
         <button class="chip staff-tab" data-staff-tab="sueldos" onclick="PanelStaffUI.cargarTab('sueldos')"><i class="fas fa-wallet"></i> Sueldos</button>
         <button class="chip staff-tab" data-staff-tab="inventario" onclick="PanelStaffUI.cargarTab('inventario')"><i class="fas fa-box"></i> Inventario</button>
         <button class="chip staff-tab" data-staff-tab="mercado-negro" onclick="PanelStaffUI.cargarTab('mercado-negro')"><i class="fas fa-skull"></i> Mercado Negro</button>
+        <button class="chip staff-tab" data-staff-tab="tienda" onclick="PanelStaffUI.cargarTab('tienda')"><i class="fas fa-store"></i> Tienda</button>
         <button class="chip staff-tab" data-staff-tab="logs" onclick="PanelStaffUI.cargarTab('logs')"><i class="fas fa-file-alt"></i> Logs</button>
       </div>
     </div>

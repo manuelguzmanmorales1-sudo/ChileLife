@@ -11,6 +11,8 @@ async function renderAdminPanel() {
     usuarios = DB.usuarios || [];
   }
 
+  setTimeout(() => adminDibujarGraficos(), 100);
+
   return `
     <div class="card">
       <div class="card-header">
@@ -103,6 +105,17 @@ async function renderAdminPanel() {
           </div>
         </div>
       </div>
+
+      <div class="grid-2" style="margin-top:16px;">
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-coins"></i> Dinero en Circulación</h3></div>
+          <canvas id="chart-dinero" height="180"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-chart-line"></i> Multas — Últimos 7 días</h3></div>
+          <canvas id="chart-multas" height="180"></canvas>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -153,4 +166,47 @@ async function adminCambiarRol(id, rut, nombre) {
 
 function adminCrearUsuario() {
   App.showLogin();
+}
+
+let _chartDinero = null;
+let _chartMultas = null;
+
+async function adminDibujarGraficos() {
+  const canvasDinero = document.getElementById('chart-dinero');
+  const canvasMultas = document.getElementById('chart-multas');
+  if (!canvasDinero || !canvasMultas || typeof Chart === 'undefined') return;
+
+  let stats;
+  try {
+    stats = await API.getAdminStats();
+  } catch (e) {
+    return;
+  }
+
+  if (_chartDinero) _chartDinero.destroy();
+  if (_chartMultas) _chartMultas.destroy();
+
+  _chartDinero = new Chart(canvasDinero, {
+    type: 'doughnut',
+    data: {
+      labels: ['Dinero Legal', 'Dinero Negro'],
+      datasets: [{ data: [stats.dineroTotal, stats.dineroNegroTotal], backgroundColor: ['#2ecc71', '#95a5a6'] }]
+    },
+    options: { plugins: { legend: { labels: { color: '#ddd' } } } }
+  });
+
+  _chartMultas = new Chart(canvasMultas, {
+    type: 'bar',
+    data: {
+      labels: stats.multasPorDia.map(d => d.fecha.slice(5)),
+      datasets: [{ label: 'Multas', data: stats.multasPorDia.map(d => d.cantidad), backgroundColor: '#FF7A1A' }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#aaa', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
 }

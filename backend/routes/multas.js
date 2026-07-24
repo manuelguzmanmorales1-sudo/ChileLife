@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { supabase } = require('../config/db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
+const { crearNotificacion } = require('../utils/notificar');
 
 function toClient(row) {
   return { _id: row.id, rut: row.rut, nombre: row.nombre, motivo: row.motivo, monto: row.monto, pagada: row.pagada, fecha: row.fecha, institucion: row.institucion };
@@ -37,6 +38,12 @@ router.post('/', authMiddleware, requireRole('carabinero', 'municipal', 'admin')
       fecha: new Date().toISOString().split('T')[0], institucion: institucion || 'Carabineros', user_id: req.user.id
     }).select().single();
     if (error) throw error;
+
+    const { data: destinatario } = await supabase.from('users').select('id').eq('rut', rut).maybeSingle();
+    if (destinatario) {
+      await crearNotificacion(destinatario.id, 'multa', 'Multa recibida', `${motivo} — $${parseInt(monto).toLocaleString()}`);
+    }
+
     res.status(201).json(toClient(data));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
