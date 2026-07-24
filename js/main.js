@@ -10,7 +10,7 @@ const App = {
     document.getElementById('page-content').innerHTML = `
       <div style="text-align:center;padding:120px 20px;">
         <i class="fas fa-shield-alt fa-spin" style="font-size:64px;background:linear-gradient(135deg,var(--accent),var(--info));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></i>
-        <p style="margin-top:24px;font-size:18px;font-weight:700;background:linear-gradient(135deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Chile Life</p>
+        <p style="margin-top:24px;font-size:18px;font-weight:700;background:linear-gradient(135deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Chile Metropolitano</p>
         <p style="margin-top:8px;color:var(--text-muted);font-size:14px;">Conectando con el servidor...</p>
         <div class="progress-bar" style="max-width:300px;margin:20px auto 0;height:4px;"><div class="progress-fill" style="width:100%;animation:progressGlow 2s ease-in-out infinite;"></div></div>
       </div>
@@ -90,7 +90,7 @@ const App = {
       <div class="card" style="max-width:440px;margin:40px auto;text-align:center;">
         <div style="margin-bottom:24px;">
           <img src="img/logo.png" alt="Logo" class="login-logo-simple" style="width:56px;height:56px;filter:drop-shadow(0 0 12px var(--accent-glow));">
-          <h1 style="font-size:24px;margin:8px 0 4px;background:linear-gradient(135deg,var(--accent),#fff,var(--info));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200%;animation:gradientShift 4s ease infinite;">Chile Life</h1>
+          <h1 style="font-size:24px;margin:8px 0 4px;background:linear-gradient(135deg,var(--accent),#fff,var(--info));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200%;animation:gradientShift 4s ease infinite;">Chile Metropolitano</h1>
           <p style="color:var(--text-muted);font-size:14px;margin-top:4px;">Ingresa con tu cuenta de Discord para acceder al portal.</p>
         </div>
         ${oauthError ? `<div class="alert alert-danger" style="margin-bottom:16px;"><i class="fas fa-times-circle"></i> No se pudo verificar tu cuenta de Discord. Intenta de nuevo.</div>` : ''}
@@ -139,7 +139,7 @@ const App = {
 
   getAllowedPages() {
     const role = Auth.currentUser ? Auth.currentUser.rol : 'ciudadano';
-    const common = ['inicio', 'dashboard', 'dni', 'banco', 'tienda', 'concesionario', 'inventario', 'od-sistema', 'ranking'];
+    const common = ['inicio', 'dashboard', 'dni', 'banco', 'tienda', 'concesionario', 'inventario', 'od-sistema', 'ranking', 'casino'];
     const rolePages = {
       ciudadano: [],
       carabinero: ['carabineros-comisaria', 'carabineros-aupol'],
@@ -165,6 +165,7 @@ const App = {
       'pdi-gepol': () => renderGEPOL(),
       'municipalidad-seguridad': () => renderSeguridad(),
       'od-sistema': () => renderODSistema(),
+      casino: () => renderCasino(),
       ranking: async () => await renderRanking(),
       'admin-panel': async () => await renderAdminPanel(),
       'panel-staff': async () => await renderPanelStaff(),
@@ -214,13 +215,14 @@ const App = {
       'pdi-gepol': 'GEPOL - PDI',
       'municipalidad-seguridad': 'SNSM - Sistema Nacional de Seguridad Municipal',
       'od-sistema': 'Sistema OD',
+      casino: 'Casino',
       ranking: 'Ranking — Top 10',
       'admin-panel': 'Panel de Administración',
       'panel-staff': 'Panel de Staff',
       'gestion-usuarios': 'Gestión de Usuarios',
     };
 
-    title.textContent = titles[page] || 'Chile Life';
+    title.textContent = titles[page] || 'Chile Metropolitano';
 
     const backBtn = document.getElementById('back-btn');
     if (backBtn) {
@@ -326,6 +328,7 @@ const App = {
       'pdi-gepol':              { icon:'fa-search',       color:'#3498db', title:'GEPOL',             desc:'Gestión criminal PDI',           roles:['pdi','admin'] },
       'municipalidad-seguridad':{ icon:'fa-shield-alt',   color:'#9b59b6', title:'SNSM',              desc:'Base de datos ciudadana municipal', roles:['municipal','admin'] },
       'od-sistema':             { icon:'fa-cogs',         color:'#f1c40f', title:'Sistema OD',        desc:'Mercado negro y organizaciones',  roles:['ciudadano','carabinero','pdi','municipal','admin'] },
+      casino:                   { icon:'fa-dice',         color:'#e74c3c', title:'Casino',            desc:'Ruleta, blackjack, minas y más',  roles:['ciudadano','carabinero','pdi','municipal','admin'] },
       ranking:                  { icon:'fa-trophy',       color:'#f1c40f', title:'Ranking',           desc:'Top 10 con más plata',            roles:['ciudadano','carabinero','pdi','municipal','admin'] },
       'admin-panel':            { icon:'fa-crown',        color:'#f1c40f', title:'Panel Admin',       desc:'Administración del servidor',     roles:['admin'] },
       'panel-staff':            { icon:'fa-user-shield',  color:'#DA291C', title:'Panel de Staff',    desc:'Cédulas, vehículos, propiedades, saldos y más', roles:['admin'] },

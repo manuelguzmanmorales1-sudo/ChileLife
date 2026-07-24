@@ -103,6 +103,7 @@ app.use('/api/roles', require('./routes/roles'));
 app.use('/api/economia', require('./routes/economia'));
 app.use('/api/hospital', require('./routes/hospital'));
 app.use('/api/pertenencias', require('./routes/pertenencias'));
+app.use('/api/casino', compraLimiter, require('./routes/casino'));
 
 // Endpoint que dispara Vercel Cron (1 vez al día alcanza, porque el sueldo
 // es "cada 3 días" — cada corrida solo paga a quien ya cumplió su plazo).

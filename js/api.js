@@ -471,5 +471,40 @@ const API = {
   },
   async eliminarDocumento(id) {
     return this.fetch(`/pertenencias/documentos/${id}`, { method: 'DELETE' });
+  },
+
+  // ===== Casino =====
+  async casinoRuleta(apuesta, tipo, valor) {
+    return this.fetch('/casino/ruleta/jugar', { method: 'POST', body: JSON.stringify({ apuesta, tipo, valor }) });
+  },
+  async casinoSlots(apuesta) {
+    return this.fetch('/casino/slots/jugar', { method: 'POST', body: JSON.stringify({ apuesta }) });
+  },
+  async casinoCrash(apuesta, cashout) {
+    return this.fetch('/casino/crash/jugar', { method: 'POST', body: JSON.stringify({ apuesta, cashout }) });
+  },
+  async casinoMoneda(apuesta, eleccion) {
+    return this.fetch('/casino/moneda/jugar', { method: 'POST', body: JSON.stringify({ apuesta, eleccion }) });
+  },
+  async casinoDados(apuesta, objetivo) {
+    return this.fetch('/casino/dados/jugar', { method: 'POST', body: JSON.stringify({ apuesta, objetivo }) });
+  },
+  async casinoBlackjackIniciar(apuesta) {
+    return this.fetch('/casino/blackjack/iniciar', { method: 'POST', body: JSON.stringify({ apuesta }) });
+  },
+  async casinoBlackjackPedir(id) {
+    return this.fetch(`/casino/blackjack/${id}/pedir`, { method: 'POST' });
+  },
+  async casinoBlackjackPlantarse(id) {
+    return this.fetch(`/casino/blackjack/${id}/plantarse`, { method: 'POST' });
+  },
+  async casinoMinasIniciar(apuesta, minas) {
+    return this.fetch('/casino/minas/iniciar', { method: 'POST', body: JSON.stringify({ apuesta, minas }) });
+  },
+  async casinoMinasRevelar(id, casilla) {
+    return this.fetch(`/casino/minas/${id}/revelar`, { method: 'POST', body: JSON.stringify({ casilla }) });
+  },
+  async casinoMinasRetirar(id) {
+    return this.fetch(`/casino/minas/${id}/retirar`, { method: 'POST' });
   }
 };
